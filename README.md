@@ -65,24 +65,7 @@ documented at the top of `utils/crop.py`.
 be present; training checks this before loading the backbone and reports which
 entries are missing.
 
-## Train
 
-```bash
-python train.py \
-    --data-dir data \
-    --label-dir dataset \
-    --crop-boxes data/crop_boxes.json \
-    --backbone-path /path/to/Qwen3.5-VL \
-    --output-dir outputs/bonescanad
-```
-
-Defaults: batch size 8, 50 epochs, AdamW, threshold selected on the validation
-split at a specificity floor of 0.90. Run `python train.py --help` for the rest,
-including the ablation switches (`--no-aaea`, `--no-acdf`, `--no-sare`,
-`--no-sca`) and `--evaluate-test`.
-
-Outputs go to `--output-dir`: `best.pt`, `run_config.json`, `train.log`,
-prediction CSVs and metric JSONs.
 
 ## Acknowledgements
 
