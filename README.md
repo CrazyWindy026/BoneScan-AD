@@ -1,72 +1,38 @@
 # BoneScanAD
 
-Anomaly detection for whole-body bone SPECT scans, built on the
-[VisualAD](https://github.com/7HHHHH/VisualAD) formulation: a learnable
-anomaly/normal token pair is inserted into the ViT patch sequence and scored by
-`cos(patch, t_a) - cos(patch, t_n)`, with one token pair per anatomical region.
-Nine regions (knees, ankles, shoulders, spine, chest) are scored across the
-anterior and posterior projections.
+Nine-region anomaly detection on whole-body bone scintigraphy using a Qwen3.5 ViT and [VisualAD](https://github.com/7HHHHH/VisualAD)-style normal/anomaly tokens, with SCA,AAEA and SARE.
 
-## Install
+## Setup
 
 ```bash
 pip install -r requirements.txt
 ```
 
-A CUDA GPU with at least 24 GB of memory is recommended.
-
-## Backbone
-
-Download a Qwen3.5 vision-language model and pass it with `--backbone-path`
-(a local directory or a HuggingFace model id). The default is `./backbone`.
-Only the vision tower is used for scoring.
+Place the Qwen3.5 backbone in `./backbone`, or set `--backbone-path`.
 
 ## Data
 
-Whole-body images named by patient id, plus region labels in three CSV sources:
-
-```
-data/ant/<patient_id>.png        # anterior projection
-data/post/<patient_id>.png       # posterior projection
-dataset/limbs/{train,val,test}.csv    # patient_id, loc_0 ... loc_5
-dataset/spine/{train,val,test}.csv    # patient_id, label_spine
-dataset/chest/{train,val,test}.csv    # patient_id, loc_7, loc_8
-```
-
-`0` is normal, any positive value is abnormal, and a blank or negative value
-marks the region as unlabelled (the sample is skipped). Use `--data-dir`,
-`--label-dir` and `--label-subdirs` if your layout differs.
-
-## Crop template
-
-**No ROI coordinates ship with this repository** — they depend on your scan
-protocol and camera, so you must measure them on your own data. Write a JSON
-template mapping each projection and region id to `[x1, y1, x2, y2]`:
-
-```json
-{
-  "ant": {
-    "0": [140, 480, 190, 560],
-    "7": {"box": [132, 135, 190, 254], "polygon": [[140,150],[188,150],[188,240]]}
-  },
-  "post": {
-    "6": [102, 140, 150, 320]
-  }
-}
+```text
+data/ant/<patient_id>.png
+data/post/<patient_id>.png
+data/crop_boxes.json
+dataset/limbs/{train,val,test}.csv
+dataset/spine/{train,val,test}.csv
+dataset/chest/{train,val,test}.csv
 ```
 
-Region order: `0 left knee | 1 right knee | 2 left ankle | 3 right ankle |
-4 left shoulder | 5 right shoulder | 6 spine | 7 left chest | 8 right chest`.
-The spine is cropped from `post`, every other region from `ant`. An optional
-`polygon` masks out neighbouring anatomy inside the box. The full format is
-documented at the top of `utils/crop.py`.
+`crop_boxes.json` defines the nine anatomical ROIs (see `utils/crop.py`). Labels: `0` normal, `>0` abnormal; missing/negative labels are ignored.
 
-`--crop-boxes` defaults to `<data-dir>/crop_boxes.json`. All nine regions must
-be present; training checks this before loading the backbone and reports which
-entries are missing.
+## Train
 
-## Acknowledgements
+```bash
+python train.py \
+  --backbone-path ./backbone \
+  --data-dir ./data \
+  --label-dir ./dataset \
+  --crop-boxes ./data/crop_boxes.json
+```
 
-The backbone formulation and the SCA module follow
-[VisualAD](https://github.com/7HHHHH/VisualAD). This is an independent
-implementation for bone SPECT, not affiliated with the VisualAD authors.
+## Acknowledgement
+
+Built upon [VisualAD](https://github.com/7HHHHH/VisualAD); independent implementation for bone scintigraphy.
