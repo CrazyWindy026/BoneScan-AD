@@ -65,8 +65,6 @@ documented at the top of `utils/crop.py`.
 be present; training checks this before loading the backbone and reports which
 entries are missing.
 
-
-
 ## Acknowledgements
 
 The backbone formulation and the SCA module follow
